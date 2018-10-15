@@ -8,6 +8,8 @@ from flask import Flask
 from flask import request
 import copy
 
+from e1102f18.services import interactivesvc
+
 
 app = Flask(__name__)
 
@@ -17,6 +19,12 @@ def root():
     fn = "index.html"
     #debug_message("Trying to send file: " + fn)
     return app.send_static_file(fn)
+
+@app.route('/connect_test')
+def connect_test():
+
+    result = interactivesvc.connect_test()
+    return json.dumps(result), 200
 
 
 if __name__ == '__main__':
