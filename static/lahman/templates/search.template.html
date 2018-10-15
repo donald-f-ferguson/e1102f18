@@ -1,0 +1,296 @@
+<div class="container" ng-app="Baseball" ng-controller="SearchController">
+
+    <!-- Modal -->
+    <!--
+        This is a popup modal. The page interactions are locked and the under must interact with the modal
+        before resuming interaction with the page.
+
+        This modal simply reports that the search did not find anything.
+    -->
+    <div class="modal fade" id="nothingFoundModal" role="dialog">
+        <div class="modal-dialog">
+
+        <!-- Modal content-->
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+              <h4 class="modal-title">Nothing Found.</h4>
+            </div>
+            <div class="modal-body">
+              <p>Search did not return any data.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+    </div>
+     <div class="modal fade" id="notEnoughSearchData" role="dialog">
+        <div class="modal-dialog">
+
+        <!-- Modal content-->
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+              <h4 class="modal-title">Insuffucient search information entered.</h4>
+            </div>
+            <div class="modal-body">
+              <p>For the searches:</p>
+                <ul>
+                    <li>By playerID: An ID</li>
+                    <li>By name: At least a last name.</li>
+                    <li>By query: At least one search field.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+    <div ng-show="pageMode.currentMode==pageMode.showOptions">
+        <div  class="row">
+            <div class="col-lg-12">
+                <h1>New Search Forms:</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm">
+                <p>Search if you know the unique player ID for the player.</p>
+            </div>
+            <div class="col-sm">
+                <div class="radio">
+                    <label><input ng-model="search_type" type="radio" value="{{searchStates.byId}}"
+                            name="radio1" >&nbsp;&nbsp;By player ID</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm">
+                <p>Search if you know the players full last name. You may optionally enter a first name.</p>
+            </div>
+            <div class="col-sm">
+                <div class="radio">
+                    <label><input ng-model="search_type" type="radio" value="{{searchStates.byName}}"
+                            name="radio1" > By name</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm">
+                <p>Choose if you want to submit a general search as a combination of any player properties.</p>
+            </div>
+            <div class="col-sm">
+                <div class="radio">
+                    <label><input ng-model="search_type" type="radio" value="{{searchStates.byQuery}}"
+                            name="radio1" > By general query</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm">
+                <p>Choose if you want to search by team and year.</p>
+            </div>
+            <div class="col-sm">
+                <div class="radio">
+                    <label><input ng-model="search_type" type="radio" value="{{searchStates.byTeamAndYear}}"
+                            name="radio1" > By team and year.</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" ng-show="selectedSearchMode">
+            <div class="col-sm">
+                <H4>Enter search information:</H4>
+            </div>
+            <div class="col-sm">
+                 <a ng-show="canLookup()" ng-click="doSearchButton()" class="btn btn-primary" style="color:white;">{{ currentButtonState.msg }}</a>
+            </div>
+        </div>
+        <hr>
+        <!-- Modal -->
+    <!--
+        User entered insufficient information.
+    -->
+
+        <div  ng-show="search_type==searchStates.byId" class="input-group input-group-sm mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="inputGroup-sizing-sm">Player ID:</span>
+            </div>
+            <input type="text" ng-model="inputPlayerId" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+        </div>
+
+
+        <div ng-show="search_type==searchStates.byName">
+            <div  class="input-group input-group-sm mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputGroup-sizing-sm">nameLast:</span>
+                </div>
+                <input type="text" ng-model="inputLastName" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+            </div>
+            <div   class="input-group input-group-sm mb-3">
+                <div class="input-group-prepend">
+                <span class="input-group-text" id="inputGroup-sizing-sm">nameFirst:</span>
+                </div>
+                <input type="text" ng-model="inputFirstName" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+            </div>
+        </div>
+
+        <div  ng-show="search_type==searchStates.byQuery&&(!showingQueryData)" ng-repeat="f in searchFields" class="input-group input-group-sm mb-3">
+            <div class="input-group-prepend">
+                <span  class="input-group-text" id="inputGroup-sizing-lg">{{f.Field}}</span>
+            </div>
+            <input ng-keyup="querykeyDown($index)" type="text" ng-model="f.value" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+        </div>
+
+        <div ng-show="search_type==searchStates.byTeamAndYear">
+            <div class="row">
+                <div class="col-sm">
+                    <div  class="input-group input-group-sm mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="inputGroup-sizing-sm">yearID:</span>
+                        </div>
+                        <input type="text" ng-model="inputYearID" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+                    </div>
+                </div>
+                <div class="col-sm">
+                    <div   class="input-group input-group-sm mb-3">
+                        <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm">teamID</span>
+                        </div>
+                        <input type="text" ng-model="inputTeamID" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div ng-show="canShowPeople()" class="row">
+        <div class="col-lg-12">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="card-title">Result</h2>
+                    <p class="card-text">Player Information</p>
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Player ID</th>
+                                <th scope="col">Last name</th>
+                                <th scope="col">First name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-click="details($index)" ng-repeat="k in currentPeople">
+                                <td>{{k.playerID.value}}</td>
+                                <td>{{ k.nameLast }}</td>
+                                <td>{{ k.nameFirst }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="card-footer"> -->
+
+
+        <div ng-show="havePaging" class="row my-2">
+            <div ng-show="havePrev" class="col-sm">
+                <div class="col-lg-8"><input ng-click="doPaging('previous')" type="button" class="btn btn-outline-primary" value="Previous"></div>
+            </div>
+            <div ng-show="haveNext" class="col-sm">
+                <div class="col-lg-8"><input ng-click="doPaging('next')" type="button" class="btn btn-outline-primary float-right" value="Next"></div>
+            </div>
+        </div>
+        <!-- </div> -->
+    </div>
+    <div ng-show="showDetails" class="row">
+        <div class="col-lg-12">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="card-title">Player Details</h2>
+                    <div class="row">
+                        <div class="col-lg-5">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <td>Full name:</td>
+                                        <td>{{ playerDetails.player_info.fullName }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>DOB:</td>
+                                        <td>{{ playerDetails.player_info.DOB }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>DOD:</td>
+                                        <td>{{ playerDetails.player_info.DOD }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-lg-5">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <td>Throws:</td>
+                                        <td>{{ playerDetails.player_info.throws }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bats</td>
+                                        <td>{{ playerDetails.player_info.bats }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Height</td>
+                                        <td>{{ playerDetails.player_info.height }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Weight</td>
+                                        <td>{{ playerDetails.player_info.weight }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-10">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Year</th>
+                                        <th scope="col">Team</th>
+                                        <th scope="col">AB</th>
+                                        <th scope="col">H</th>
+                                        <th scope="col">HR</th>
+                                        <th scope="col">RBI</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <p>{{player}}</p>
+                                    <tr ng-repeat="b in playerDetails.batting_info">
+                                        <td>{{ b.yearID }}</td>
+                                        <td>{{ b.teamID }}</td>
+                                        <td>{{ b.AB }}</td>
+                                        <td>{{ b.H }}</td>
+                                        <td>{{ b.HR }}</td>
+                                        <td>{{ b.RBI }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="card-footer"> -->
+
+
+
+        <div class="col-lg-8"><input ng-click="doCloseDetails()" type="button" class="btn btn-outline-primary" value="Done"></div>
+
+        <!-- </div> -->
+   </div>
+</div>
+<!-- /.container -->
